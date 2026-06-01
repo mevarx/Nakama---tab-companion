@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Nakama Panel</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="terminal-panel">
+    <!-- Header -->
+    <div class="terminal-header">
+      <div class="avatar-holder">
+        <canvas id="popup-avatar" width="48" height="48"></canvas>
+      </div>
+      <div class="header-text">
+        <h1 class="pixel-title">DEV_BUDDY</h1>
+        <div class="status-badge" id="level-tag">LEVEL 1 COD3R</div>
+      </div>
+    </div>
+
+    <!-- XP Bar -->
+    <div class="section xp-section">
+      <div class="section-label">
+        <span>EXP_PROGRESS</span>
+        <span id="xp-text" class="value">0 / 100</span>
+      </div>
+      <div class="progress-container">
+        <div class="progress-bar" id="xp-bar" style="width: 0%;"></div>
+      </div>
+    </div>
+
+    <!-- Stats Matrix -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-content">
+          <div class="stat-label">COINS</div>
+          <div class="stat-value" id="coins-count">0</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">✨</div>
+        <div class="stat-content">
+          <div class="stat-label">TOTAL</div>
+          <div class="stat-value" id="total-collected">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Controls -->
+    <div class="section settings-section">
+      <div class="section-title">SYSTEM_CONTROLS</div>
+      
+      <!-- Toggle: Enable -->
+      <div class="control-row">
+        <label for="toggle-enabled">ENABLE_COMPANION</label>
+        <label class="pixel-switch">
+          <input type="checkbox" id="toggle-enabled" checked>
+          <span class="pixel-slider"></span>
+        </label>
+      </div>
+
+      <!-- Slider: Scale -->
+      <div class="control-row-vertical">
+        <div class="slider-label">
+          <span>RENDER_SCALE</span>
+          <span id="scale-value" class="value">2x</span>
+        </div>
+        <input type="range" id="slider-scale" min="1" max="4" step="0.5" value="2" class="pixel-range">
+      </div>
+
+      <!-- Slider: Speed -->
+      <div class="control-row-vertical">
+        <div class="slider-label">
+          <span>WALK_SPEED</span>
+          <span id="speed-value" class="value">1x</span>
+        </div>
+        <input type="range" id="slider-speed" min="0.5" max="3" step="0.25" value="1" class="pixel-range">
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="terminal-footer">
+      <div class="footer-note">NAKAMA v1.0.0</div>
+      <button class="pixel-btn" id="btn-reset">RESET_SYSTEM</button>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

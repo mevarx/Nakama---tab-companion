@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Nakama Core Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="retro-header">
+      <h1 class="title"><span class="neon-purple">NAKAMA</span> // SYSTEM_DASHBOARD</h1>
+      <p class="subtitle">Progression Metrics, Achievment Matrix, and System Configurations</p>
+    </header>
+
+    <div class="dashboard-grid">
+      <!-- Left Column: Configs & Stats -->
+      <div class="column">
+        <!-- System Settings -->
+        <div class="panel">
+          <div class="panel-header">SYSTEM_SETTINGS</div>
+          <div class="panel-body">
+            <!-- Toggle sound -->
+            <div class="setting-row">
+              <div class="setting-desc">
+                <span class="label">8-BIT_AUDIO_FEEDBACK</span>
+                <span class="sublabel">Synthesizes retro sounds on item collection and level up events</span>
+              </div>
+              <label class="pixel-switch">
+                <input type="checkbox" id="setting-sound">
+                <span class="pixel-slider"></span>
+              </label>
+            </div>
+
+            <!-- Size scale -->
+            <div class="setting-row-vertical">
+              <div class="slider-label">
+                <span>COMPANION_PHYSICAL_SCALE</span>
+                <span id="scale-indicator" class="neon-cyan">2x</span>
+              </div>
+              <input type="range" id="setting-scale" min="1" max="4" step="0.5" value="2" class="pixel-range">
+            </div>
+
+            <!-- Speed scale -->
+            <div class="setting-row-vertical">
+              <div class="slider-label">
+                <span>COMPANION_WALK_SPEED</span>
+                <span id="speed-indicator" class="neon-cyan">1x</span>
+              </div>
+              <input type="range" id="setting-speed" min="0.5" max="3" step="0.25" value="1" class="pixel-range">
+            </div>
+          </div>
+        </div>
+
+        <!-- Telemetry & Stats -->
+        <div class="panel">
+          <div class="panel-header">SITE_STATISTICS</div>
+          <div class="panel-body">
+            <table class="retro-table">
+              <thead>
+                <tr>
+                  <th>SITE_DOMAIN</th>
+                  <th>VISITS</th>
+                  <th>ITEMS_COLLECTED</th>
+                  <th>TIME_SPENT</th>
+                </tr>
+              </thead>
+              <tbody id="stats-table-body">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Quests & Achievements -->
+      <div class="column">
+        <!-- Quests Matrix -->
+        <div class="panel">
+          <div class="panel-header">QUEST_LOG</div>
+          <div class="panel-body" id="quests-container">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+
+        <!-- Achievements Matrix -->
+        <div class="panel">
+          <div class="panel-header">ACHIEVEMENTS_MATRIX</div>
+          <div class="panel-body">
+            <div class="achievements-grid" id="achievements-container">
+              <!-- Injected via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer buttons -->
+    <footer class="retro-footer">
+      <div>SYSTEM STABLE // NO TELEMETRY Inbound</div>
+      <button class="btn-danger" id="btn-reset-full">INITIALIZE_SYSTEM_WIPE</button>
+    </footer>
+  </div>
+
+  <script src="settings.js"></script>
+</body>
+</html>

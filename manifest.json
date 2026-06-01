@@ -1,0 +1,41 @@
+{
+  "manifest_version": 2,
+  "name": "Nakama",
+  "version": "1.0.0",
+  "description": "A pixel art developer companion that lives on every website.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "nakama@devcompanion.io",
+      "strict_min_version": "91.0"
+    }
+  },
+  "permissions": [
+    "storage",
+    "tabs",
+    "<all_urls>"
+  ],
+  "background": {
+    "scripts": ["src/background.js"],
+    "persistent": false
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content.js"],
+      "css": [],
+      "run_at": "document_idle"
+    }
+  ],
+  "browser_action": {
+    "default_popup": "ui/popup.html",
+    "default_icon": {
+      "16": "assets/icon16.png",
+      "48": "assets/icon48.png",
+      "128": "assets/icon128.png"
+    }
+  },
+  "options_ui": {
+    "page": "ui/settings.html",
+    "browser_style": false
+  }
+}
