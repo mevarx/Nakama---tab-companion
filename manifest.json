@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Nakama",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A pixel art developer companion that lives on every website.",
   "browser_specific_settings": {
     "gecko": {
@@ -37,5 +37,10 @@
   "options_ui": {
     "page": "ui/settings.html",
     "browser_style": false
-  }
+  },
+  "web_accessible_resources": [
+    "ui/dashboard.html",
+    "ui/dashboard.css",
+    "ui/dashboard.js"
+  ]
 }

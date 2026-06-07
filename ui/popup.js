@@ -60,11 +60,18 @@ async function saveProgression(state) {
 function broadcastSettings(state) {
   const _browser = typeof browser !== 'undefined' ? browser : (typeof chrome !== 'undefined' ? chrome : null);
   if (!_browser || !_browser.tabs) return;
-  _browser.tabs.query({}).then(tabs => {
+  const handler = (tabs) => {
+    if (!tabs) return;
     for (const tab of tabs) {
       _browser.tabs.sendMessage(tab.id, { type: "UPDATE_SETTINGS", state }).catch(() => {});
     }
-  }).catch(() => {});
+  };
+  const result = _browser.tabs.query({});
+  if (result && typeof result.then === 'function') {
+    result.then(handler).catch(() => {});
+  } else {
+    _browser.tabs.query({}, handler);
+  }
 }
 
 
@@ -216,6 +223,15 @@ document.addEventListener("DOMContentLoaded", () => {
       await saveProgression(DEFAULT_STATE);
       broadcastSettings(DEFAULT_STATE);
       renderPanel();
+    }
+  });
+
+
+  document.getElementById("btn-dashboard").addEventListener("click", () => {
+    const _browser = typeof browser !== 'undefined' ? browser : (typeof chrome !== 'undefined' ? chrome : null);
+    if (_browser && _browser.tabs) {
+      const url = _browser.runtime.getURL("ui/dashboard.html");
+      _browser.tabs.create({ url });
     }
   });
 });

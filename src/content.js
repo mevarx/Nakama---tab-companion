@@ -1548,6 +1548,7 @@
   const _ext = typeof browser !== 'undefined' ? browser : (typeof chrome !== 'undefined' ? chrome : null);
   if (_ext && _ext.runtime && _ext.runtime.onMessage) {
     _ext.runtime.onMessage.addListener((message, sender, sendResponse) => {
+
       if (message.type === "UPDATE_SETTINGS") {
         localState = message.state;
         movement.updateSettings(localState.settings.scale, localState.settings.speed);
@@ -1558,6 +1559,20 @@
         }
         sendResponse({ status: "ok" });
       }
+
+      else if (message.type === "FORCE_STATE") {
+        const s = message.state || "react";
+        const d = message.duration || 2000;
+        stateMachine.transitionTo(s, d);
+        if (stateMachine2) stateMachine2.transitionTo(s, d);
+        sendResponse({ status: "ok" });
+      }
+
+      else if (message.type === "SPAWN_ITEM") {
+        collectibles.spawn(theme);
+        sendResponse({ status: "ok" });
+      }
+
       return true;
     });
   }

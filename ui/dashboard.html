@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nakama — Dev Companion Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <!-- Scanlines overlay -->
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <!-- Grid background -->
+  <div class="grid-bg" aria-hidden="true"></div>
+
+  <div class="dashboard-layout">
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-pixel-art">
+          <canvas id="sidebar-avatar" width="64" height="64"></canvas>
+        </div>
+        <div class="logo-text">
+          <div class="logo-title">NAKAMA</div>
+          <div class="logo-sub">DEV COMPANION v1.0</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-panel="overview" id="nav-overview">
+          <span class="nav-icon">◈</span>
+          <span>OVERVIEW</span>
+        </button>
+        <button class="nav-item" data-panel="character" id="nav-character">
+          <span class="nav-icon">◉</span>
+          <span>CHARACTER</span>
+        </button>
+        <button class="nav-item" data-panel="settings" id="nav-settings">
+          <span class="nav-icon">◆</span>
+          <span>SETTINGS</span>
+        </button>
+        <button class="nav-item" data-panel="stats" id="nav-stats">
+          <span class="nav-icon">▦</span>
+          <span>SITE_STATS</span>
+        </button>
+        <button class="nav-item" data-panel="achievements" id="nav-achievements">
+          <span class="nav-icon">★</span>
+          <span>ACHIEVEMENTS</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-status">
+        <div class="status-indicator" id="companion-status-indicator">
+          <div class="status-dot active" id="status-dot"></div>
+          <span id="status-label">COMPANION ACTIVE</span>
+        </div>
+        <button class="master-toggle-btn" id="master-toggle">
+          <span id="master-toggle-text">DISABLE</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="main-content">
+
+      <!-- ── OVERVIEW PANEL ── -->
+      <section class="panel active" id="panel-overview">
+        <div class="panel-header">
+          <h1 class="panel-title">SYSTEM_OVERVIEW</h1>
+          <div class="panel-title-line"></div>
+        </div>
+
+        <!-- XP Card -->
+        <div class="card xp-card">
+          <div class="card-header">
+            <span class="card-label">EXPERIENCE_PROGRESS</span>
+            <span class="xp-badge" id="level-badge">LVL 1</span>
+          </div>
+          <div class="xp-bar-track">
+            <div class="xp-bar-fill" id="xp-bar"></div>
+            <div class="xp-bar-glow" id="xp-bar-glow"></div>
+          </div>
+          <div class="xp-numbers">
+            <span id="xp-current">0</span> / <span id="xp-next">100</span> XP
+          </div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="stats-row">
+          <div class="stat-block">
+            <div class="stat-icon-wrap gold">💰</div>
+            <div>
+              <div class="stat-lbl">COINS</div>
+              <div class="stat-val" id="stat-coins">0</div>
+            </div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-icon-wrap cyan">✨</div>
+            <div>
+              <div class="stat-lbl">TOTAL_COLLECTED</div>
+              <div class="stat-val" id="stat-total">0</div>
+            </div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-icon-wrap purple">⚡</div>
+            <div>
+              <div class="stat-lbl">LEVEL</div>
+              <div class="stat-val" id="stat-level">1</div>
+            </div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-icon-wrap green">🌐</div>
+            <div>
+              <div class="stat-lbl">SITES_VISITED</div>
+              <div class="stat-val" id="stat-sites">0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick actions -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-label">QUICK_ACTIONS</span>
+          </div>
+          <div class="quick-actions">
+            <button class="action-btn cyan" id="btn-force-react">
+              <span>▶ FORCE_REACT</span>
+            </button>
+            <button class="action-btn purple" id="btn-force-special">
+              <span>★ FORCE_SPECIAL</span>
+            </button>
+            <button class="action-btn green" id="btn-spawn-item">
+              <span>◎ SPAWN_ITEM</span>
+            </button>
+            <button class="action-btn gold" id="btn-add-xp">
+              <span>+ ADD_10_XP</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quests -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-label">ACTIVE_QUESTS</span>
+          </div>
+          <div id="quests-list" class="quest-list">
+            <div class="empty-state">No active quests</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── CHARACTER PANEL ── -->
+      <section class="panel" id="panel-character">
+        <div class="panel-header">
+          <h1 class="panel-title">CHARACTER_SELECT</h1>
+          <div class="panel-title-line"></div>
+        </div>
+
+        <div class="character-mode-row">
+          <span class="card-label">SELECTION_MODE</span>
+          <div class="mode-toggle-group">
+            <button class="mode-btn active" id="mode-auto" data-mode="auto">AUTO (by site)</button>
+            <button class="mode-btn" id="mode-manual" data-mode="manual">MANUAL OVERRIDE</button>
+          </div>
+        </div>
+
+        <div class="character-grid" id="character-grid">
+          <!-- Characters will be generated by JS -->
+        </div>
+
+        <div class="card current-char-card">
+          <div class="card-header">
+            <span class="card-label">CURRENT_CHARACTER</span>
+          </div>
+          <div class="current-char-info">
+            <canvas id="char-preview" width="96" height="96"></canvas>
+            <div class="char-details">
+              <div class="char-name" id="current-char-name">TANJIRO</div>
+              <div class="char-theme" id="current-char-theme">Theme: default</div>
+              <div class="char-quote" id="current-char-quote">"Code is poetry."</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── SETTINGS PANEL ── -->
+      <section class="panel" id="panel-settings">
+        <div class="panel-header">
+          <h1 class="panel-title">SYSTEM_SETTINGS</h1>
+          <div class="panel-title-line"></div>
+        </div>
+
+        <div class="settings-grid">
+          <!-- Enable/Disable -->
+          <div class="card setting-card">
+            <div class="setting-row">
+              <div>
+                <div class="setting-name">COMPANION_ENABLED</div>
+                <div class="setting-desc">Show/hide the companion on all sites</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggle-enabled" checked>
+                <span class="toggle-track">
+                  <span class="toggle-thumb"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Sound -->
+          <div class="card setting-card">
+            <div class="setting-row">
+              <div>
+                <div class="setting-name">SOUND_EFFECTS</div>
+                <div class="setting-desc">Retro sounds on collection & level up</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggle-sound">
+                <span class="toggle-track">
+                  <span class="toggle-thumb"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Scale -->
+          <div class="card setting-card">
+            <div class="setting-name">RENDER_SCALE</div>
+            <div class="setting-desc">Companion size on screen</div>
+            <div class="slider-row">
+              <span class="slider-min">1x</span>
+              <input type="range" class="styled-range" id="slider-scale" min="1" max="4" step="0.5" value="2">
+              <span class="slider-max">4x</span>
+              <span class="slider-val" id="scale-val">2x</span>
+            </div>
+            <div class="tick-marks">
+              <span>1</span><span>1.5</span><span>2</span><span>2.5</span><span>3</span><span>3.5</span><span>4</span>
+            </div>
+          </div>
+
+          <!-- Speed -->
+          <div class="card setting-card">
+            <div class="setting-name">WALK_SPEED</div>
+            <div class="setting-desc">Companion movement speed multiplier</div>
+            <div class="slider-row">
+              <span class="slider-min">0.5x</span>
+              <input type="range" class="styled-range" id="slider-speed" min="0.5" max="3" step="0.25" value="1">
+              <span class="slider-max">3x</span>
+              <span class="slider-val" id="speed-val">1x</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="danger-zone">
+          <div class="danger-header">⚠ DANGER_ZONE</div>
+          <div class="danger-actions">
+            <button class="danger-btn" id="btn-reset-progress">RESET_ALL_PROGRESS</button>
+            <button class="danger-btn secondary" id="btn-reset-settings">RESET_SETTINGS</button>
+          </div>
+          <div class="danger-desc">These actions cannot be undone. All XP, coins, and progress will be wiped.</div>
+        </div>
+      </section>
+
+      <!-- ── STATS PANEL ── -->
+      <section class="panel" id="panel-stats">
+        <div class="panel-header">
+          <h1 class="panel-title">SITE_STATISTICS</h1>
+          <div class="panel-title-line"></div>
+        </div>
+        <div class="site-stats-grid" id="site-stats-grid">
+          <!-- Generated by JS -->
+        </div>
+      </section>
+
+      <!-- ── ACHIEVEMENTS PANEL ── -->
+      <section class="panel" id="panel-achievements">
+        <div class="panel-header">
+          <h1 class="panel-title">ACHIEVEMENTS</h1>
+          <div class="panel-title-line"></div>
+        </div>
+        <div class="achievements-grid" id="achievements-grid">
+          <!-- Generated by JS -->
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>
