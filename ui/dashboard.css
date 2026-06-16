@@ -991,3 +991,23 @@ html, body {
   .sidebar { width: 180px; }
   .main-content { margin-left: 180px; padding: 20px 16px; }
 }
+
+/* ============ CATCH FEED ============ */
+.catch-feed {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+.catch-feed::-webkit-scrollbar {
+  width: 6px;
+}
+.catch-feed::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+.catch-feed li {
+  color: #8892B0;
+  transition: color 0.2s ease;
+}
+.catch-feed li:hover {
+  color: var(--neon-cyan);
+}

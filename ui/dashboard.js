@@ -130,7 +130,7 @@ function showToast(msg, type = 'info') {
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 
-const PANELS = ['overview', 'character', 'settings', 'stats', 'achievements'];
+const PANELS = ['overview', 'character', 'settings', 'stats', 'achievements', 'world'];
 
 function switchPanel(id) {
   PANELS.forEach(p => {
@@ -287,6 +287,67 @@ async function renderAll() {
   renderSiteStats(state);
   renderAchievements(state);
   renderSidebarStatus(state);
+  renderWorld(state);
+}
+
+function timeAgo(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60)   return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s/60)}m ago`;
+  return `${Math.floor(s/3600)}h ago`;
+}
+
+async function renderWorld(state) {
+  const storage = getStorageAPI();
+  const data = storage ? await new Promise((resolve) => {
+    storage.get(['totalCaught','sitesVisited','totalXP','catchHistory','settings','anthropicApiKey'], resolve);
+  }) : {};
+
+  document.getElementById('world-totalCaught').textContent  = data.totalCaught  ?? state.totalCaught ?? 0;
+  document.getElementById('world-sitesVisited').textContent = data.sitesVisited ?? state.sitesVisited ?? 0;
+  document.getElementById('world-totalXP').textContent      = data.totalXP      ?? state.xp      ?? 0;
+
+  const history = data.catchHistory ?? state.catchHistory ?? [];
+  const feed    = document.getElementById('catchFeed');
+  if (feed) {
+    feed.innerHTML = '';
+    history.slice(-20).reverse().forEach(entry => {
+      const li = document.createElement('li');
+      li.style.borderBottom = '1px dashed rgba(255, 255, 255, 0.05)';
+      li.style.paddingBottom = '4px';
+      li.textContent = `${entry.emoji ?? '📦'} ${entry.type} — ${entry.site} · ${timeAgo(entry.ts)}`;
+      feed.appendChild(li);
+    });
+  }
+
+  const s = data.settings ?? state.settings ?? {};
+  
+  const spawnRateEl = document.getElementById('spawnRate');
+  if (spawnRateEl) {
+    spawnRateEl.value = s.spawnRate ?? 15;
+  }
+  const spawnRateValEl = document.getElementById('spawnRateVal');
+  if (spawnRateValEl) {
+    spawnRateValEl.textContent = `${s.spawnRate ?? 15}s`;
+  }
+  
+  const autoChaseEl = document.getElementById('autoChase');
+  if (autoChaseEl) {
+    autoChaseEl.checked = s.autoChase !== false;
+  }
+  const idleRoamEl = document.getElementById('idleRoam');
+  if (idleRoamEl) {
+    idleRoamEl.checked = s.idleRoam !== false;
+  }
+  const pageReactEl = document.getElementById('pageReact');
+  if (pageReactEl) {
+    pageReactEl.checked = s.pageReact !== false;
+  }
+
+  const apiKeyEl = document.getElementById('anthropic-api-key');
+  if (apiKeyEl && data.anthropicApiKey) {
+    apiKeyEl.value = data.anthropicApiKey;
+  }
 }
 
 function renderOverview(state) {
@@ -555,6 +616,67 @@ document.getElementById('btn-reset-settings').addEventListener('click', async ()
   renderSidebarStatus(state);
   showToast('Settings reset.', 'info');
 });
+
+async function saveWorldSettings() {
+  const storage = getStorageAPI();
+  if (!storage) return;
+
+  const state = await getProgression();
+  const settings = state.settings || {};
+
+  settings.spawnRate = parseInt(document.getElementById('spawnRate').value);
+  settings.autoChase = document.getElementById('autoChase').checked;
+  settings.idleRoam  = document.getElementById('idleRoam').checked;
+  settings.pageReact = document.getElementById('pageReact').checked;
+
+  state.settings = settings;
+  await saveProgression(state);
+  
+  await new Promise(r => storage.set({ 
+    settings: settings,
+    nakamaProgress: state
+  }, r));
+
+  const ext = typeof browser !== 'undefined' ? browser : (typeof chrome !== 'undefined' ? chrome : null);
+  if (ext && ext.runtime && ext.runtime.sendMessage) {
+    ext.runtime.sendMessage({ type: 'nakama:settingsChanged' }).catch(() => {});
+  }
+}
+
+const spawnRateEl = document.getElementById('spawnRate');
+if (spawnRateEl) {
+  spawnRateEl.addEventListener('input', (e) => {
+    const valEl = document.getElementById('spawnRateVal');
+    if (valEl) valEl.textContent = `${e.target.value}s`;
+    saveWorldSettings();
+  });
+}
+
+['autoChase', 'idleRoam', 'pageReact'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('change', saveWorldSettings);
+});
+
+const saveKeyBtn = document.getElementById('btn-save-key');
+if (saveKeyBtn) {
+  saveKeyBtn.addEventListener('click', async () => {
+    const keyEl = document.getElementById('anthropic-api-key');
+    const key = keyEl ? keyEl.value.trim() : '';
+    const storage = getStorageAPI();
+    if (storage) {
+      await new Promise(r => storage.set({ anthropicApiKey: key }, r));
+      showToast('API Key saved successfully!', 'success');
+    }
+  });
+}
+
+const api = typeof chrome !== 'undefined' ? chrome : (typeof browser !== 'undefined' ? browser : null);
+if (api && api.storage && api.storage.onChanged) {
+  api.storage.onChanged.addListener(async () => {
+    const state = await getProgression();
+    renderWorld(state);
+  });
+}
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 

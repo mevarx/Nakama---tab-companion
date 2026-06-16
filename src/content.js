@@ -547,6 +547,7 @@
       this.isDragging = false;
       this.isFalling = false;
       this.floorY = window.innerHeight - this.characterSize - 20;
+      // targetX/Y removed — chasing is handled entirely by gameLoop chaseTarget
     }
 
     updateSettings(scale, speed) {
@@ -704,11 +705,7 @@
     }
 
     update(deltaTimeMs, theme, companionRect, onCollect) {
-      this.spawnTimer -= deltaTimeMs;
-      if (this.spawnTimer <= 0) {
-        this.spawn(theme);
-        this.spawnTimer = 8000 + Math.random() * 10000;
-      }
+      // Automatic spawning disabled because objectSpawner.js handles spawning.
 
       for (let i = this.items.length - 1; i >= 0; i--) {
         const item = this.items[i];
@@ -994,17 +991,160 @@
   canvas.className = "companion-canvas";
   shadow.appendChild(canvas);
 
+  window.companionEl = canvas;
+
   const bubbleDiv = document.createElement("div");
   bubbleDiv.className = "speech-bubble";
   shadow.appendChild(bubbleDiv);
 
+  window.showSpeechBubbleInternal = function(text, durationMs = 2500) {
+    bubbleDiv.textContent = text;
+    bubbleDiv.style.opacity = "1";
+    speechBubbleDuration = durationMs;
+  };
 
   const spriteSheet = generateSpriteSheet(theme);
-
 
   const movement = new MovementEngine(localState.settings.scale, localState.settings.speed);
   const stateMachine = new StateMachineEngine(localState.level);
   const collectibles = new CollectiblesEngine();
+
+  window.moveCompanion = function(tx, ty) {
+    // moveCompanion is called by pageInteraction to walk to images.
+    // We set chaseTarget to null and let the companion walk naturally.
+    // Image sitting via pageInteraction is a best-effort — just trigger walk state.
+    chaseTarget = null;
+    stateMachine.transitionTo("walk", 3000);
+  };
+
+  let chaseTarget = null;
+
+  function handleCatch(el) {
+    const type = el.dataset.type;
+    const id = el.dataset.id;
+    const emoji = el.textContent;
+    el.remove();
+    window.dispatchEvent(new CustomEvent('nakama:objectCaught', { detail: { type, id, emoji } }));
+  }
+
+  function getNearestObject() {
+    const objects = [...document.querySelectorAll('.nakama-object')];
+    if (!objects.length) return null;
+
+    const cx = movement.x + movement.characterSize / 2;
+    const cy = movement.y + movement.characterSize / 2;
+
+    return objects.reduce((nearest, el) => {
+      const r  = el.getBoundingClientRect();
+      const dx = r.left - cx, dy = r.top - cy;
+      const d  = Math.hypot(dx, dy);
+      return d < nearest.d ? { el, d } : nearest;
+    }, { el: null, d: Infinity }).el;
+  }
+
+  async function logCatch({ type, id, emoji }) {
+    const data = await getProgression();
+    const host = window.location.hostname.replace('www.', '');
+    const history = data.catchHistory ?? [];
+
+    history.push({ type, id, emoji: emoji || '📦', site: host, ts: Date.now() });
+    if (history.length > 200) history.shift();
+
+    const sites = new Set((data.sitesVisitedList ?? []).concat(host));
+
+    data.totalCaught = (data.totalCaught ?? 0) + 1;
+    data.catchHistory = history;
+    data.sitesVisited = sites.size;
+    data.sitesVisitedList = [...sites];
+
+    if (!data.siteCollected) data.siteCollected = {};
+    const siteKey = detectTheme();
+    data.siteCollected[siteKey] = (data.siteCollected[siteKey] || 0) + 1;
+
+    localState = data;
+    await saveProgression(data);
+  }
+
+  window.addEventListener('nakama:objectSpawned', () => {
+    if (localState.settings.autoChase !== false) {
+      // Delay by 2 frames so the DOM element is laid out and
+      // getBoundingClientRect() returns real viewport coordinates.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          chaseTarget = getNearestObject();
+        });
+      });
+    }
+  });
+
+  window.addEventListener('nakama:objectCaught', async (e) => {
+    const { type, id, emoji } = e.detail;
+    const cx = movement.x + movement.characterSize / 2;
+    const cy = movement.y + movement.characterSize / 2;
+
+    if (window.playCatchBurst) {
+      window.playCatchBurst(cx, cy, emoji);
+    }
+    
+    if (window.showSpeechBubble) {
+      window.showSpeechBubble(canvas, '✨ Got it!');
+    }
+
+    localState = await getProgression();
+    localState.coins = (localState.coins || 0) + 5;
+    localState.totalCollected = (localState.totalCollected || 0) + 5;
+    localState.xp = (localState.xp || 0) + 10;
+    
+    await logCatch({ type, id, emoji });
+    playRetroSound("collect");
+
+    let targetLevel = localState.level;
+    while (targetLevel < 8) {
+      const required = LEVEL_THRESHOLDS[targetLevel + 1];
+      if (required !== undefined && localState.xp >= required) targetLevel++;
+      else break;
+    }
+    const leveledUp = targetLevel > localState.level;
+    if (leveledUp) {
+      localState.level = targetLevel;
+      stateMachine.setLevel(targetLevel);
+      playRetroSound("levelup");
+    }
+
+    await saveProgression(localState);
+
+    showFloatingText(`+5 Coins`, movement.x + 10, movement.y, "#EAB308");
+    setTimeout(() => {
+      showFloatingText(`+10 XP`, movement.x - 5, movement.y - 15, "#22C55E");
+      if (leveledUp) {
+        setTimeout(() => {
+          showFloatingText("LEVEL UP!", movement.x, movement.y - 30, "#A855F7");
+          stateMachine.transitionTo("react", 2000);
+        }, 500);
+      }
+      checkProgressionQuestsAndAchievements();
+    }, 300);
+  });
+
+  const syncAndReloadSettings = async () => {
+    const fresh = await getProgression();
+    localState = fresh;
+    movement.updateSettings(localState.settings.scale, localState.settings.speed);
+    stateMachine.setLevel(localState.level);
+    if (movement2) {
+      movement2.updateSettings(localState.settings.scale, localState.settings.speed);
+      stateMachine2.setLevel(localState.level);
+    }
+  };
+
+  const api = typeof chrome !== 'undefined' ? chrome : (typeof browser !== 'undefined' ? browser : null);
+  if (api && api.storage && api.storage.onChanged) {
+    api.storage.onChanged.addListener((changes) => {
+      if (changes.settings || changes.nakamaProgress) {
+        syncAndReloadSettings();
+      }
+    });
+  }
 
 
   function showFloatingText(text, x, y, color = "#22C55E") {
@@ -1328,8 +1468,44 @@
     }
 
 
+    // Always run normal state machine + movement physics — this keeps gravity,
+    // floor clamping, and wall bouncing working correctly even while chasing.
     stateMachine.update(dt, idleTime, theme);
     movement.update(stateMachine.currentState, (s, d) => stateMachine.transitionTo(s, d));
+
+    // On top of normal movement, steer toward chaseTarget if active.
+    if (chaseTarget && !movement.isDragging && !movement.isFalling) {
+      if (!chaseTarget.isConnected) {
+        chaseTarget = null;
+      } else {
+        const r = chaseTarget.getBoundingClientRect();
+        // Guard: if the element hasn't been laid out yet, skip this frame.
+        if (r.width === 0 && r.height === 0 && r.left === 0 && r.top === 0) {
+          // skip — element not yet positioned
+        } else {
+          // Chase on the floor plane only — companion can't fly up to floating items.
+          // Target the floor position directly below the object's horizontal center.
+          const targetX = r.left + r.width / 2 - movement.characterSize / 2;
+          const cx = movement.x;
+          const dx = targetX - cx;
+          const dist = Math.abs(dx);
+
+          if (dist < movement.characterSize * 0.6) {
+            // Close enough — catch it!
+            handleCatch(chaseTarget);
+            chaseTarget = null;
+          } else {
+            // Override horizontal velocity to steer toward target.
+            const speedMultiplier = localState.settings.speed || 1;
+            const step = 2.5 * speedMultiplier;
+            movement.x += (dx / dist) * step;
+            movement.x = Math.max(0, Math.min(movement.x, window.innerWidth - movement.characterSize));
+            movement.direction = dx > 0 ? "right" : "left";
+            stateMachine.transitionTo("walk");
+          }
+        }
+      }
+    }
     
     const companionRect = {
       x: movement.x,
@@ -1411,9 +1587,13 @@
         canvas2.spriteSheet = generateSpriteSheet(theme2);
 
         movement2 = new MovementEngine(localState.settings.scale, localState.settings.speed);
-        movement2.x = Math.max(0, movement.x - 100);
-        movement2.vx = -0.7;
-        movement2.direction = "left";
+        // Ensure movement2 starts with a valid X position on screen
+        movement2.x = Math.min(
+          Math.max(movement.x + movement.characterSize + 20, 20),
+          window.innerWidth - movement2.characterSize - 20
+        );
+        movement2.vx = 0.7;
+        movement2.direction = "right";
         stateMachine2 = new StateMachineEngine(localState.level);
 
 
@@ -1569,7 +1749,11 @@
       }
 
       else if (message.type === "SPAWN_ITEM") {
-        collectibles.spawn(theme);
+        if (window.spawnDOMObject) {
+          window.spawnDOMObject();
+        } else {
+          collectibles.spawn(theme);
+        }
         sendResponse({ status: "ok" });
       }
 
